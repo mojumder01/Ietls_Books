@@ -122,6 +122,9 @@ a:hover{text-decoration:underline;}
 
 .content{
   flex:1;
+  min-width:0; /* flex items default to min-width:auto, which lets a long unbreakable
+                  run of text (e.g. OCR "........" answer-sheet lines) force the whole
+                  layout wider than the viewport on mobile - min-width:0 lets it shrink */
   padding:28px 40px 80px;
   max-width:1100px;
 }
@@ -181,7 +184,7 @@ h1.page-title{
 }
 .doc-title{margin:0 0 6px; font-size:1.1rem;}
 .doc-note{color:var(--muted); font-size:.85rem; margin:0 0 10px;}
-.doc-body p{margin:0 0 10px;}
+.doc-body p{margin:0 0 10px; overflow-wrap:anywhere;}
 
 .page-jump{
   display:flex; align-items:center; gap:10px; font-size:.82rem; color:var(--muted);
@@ -196,7 +199,7 @@ h1.page-title{
   display:inline-block; font-size:.68rem; font-weight:700; color:#fff;
   background:#94a3b8; padding:2px 8px; border-radius:6px; margin-bottom:6px;
 }
-.pdf-page p{margin:0 0 8px;}
+.pdf-page p{margin:0 0 8px; overflow-wrap:anywhere;}
 .pdf-page p.bn{
   background:var(--bn-bg); border-left:3px solid var(--bn-border);
   padding:6px 10px; border-radius:6px; margin:4px 0;
