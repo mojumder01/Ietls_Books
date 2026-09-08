@@ -66,44 +66,12 @@
     });
   }
 
-  // per-document page viewer (prev / next / jump) — only one page rendered visible at a time
-  function showPage(docId, pageNum) {
-    var pages = document.querySelectorAll('.pdf-page[data-doc="' + docId + '"]');
-    pages.forEach(function (p) {
-      p.hidden = p.getAttribute("data-page") !== String(pageNum);
-    });
-    var sel = document.querySelector('.page-jump-select[data-doc="' + docId + '"]');
-    if (sel && sel.value !== String(pageNum)) sel.value = String(pageNum);
-  }
-
+  // documents render fully (continuous scroll) - the "jump to page" dropdown just
+  // scrolls smoothly to that page's anchor instead of hiding/showing content.
   document.querySelectorAll(".page-jump-select").forEach(function (sel) {
     sel.addEventListener("change", function () {
-      showPage(sel.getAttribute("data-doc"), sel.value);
-    });
-  });
-
-  function step(docId, dir) {
-    var sel = document.querySelector('.page-jump-select[data-doc="' + docId + '"]');
-    if (!sel) return;
-    var idx = sel.selectedIndex + dir;
-    if (idx < 0 || idx >= sel.options.length) return;
-    sel.selectedIndex = idx;
-    showPage(docId, sel.value);
-  }
-
-  document.querySelectorAll(".pg-prev").forEach(function (btn) {
-    btn.addEventListener("click", function () { step(btn.getAttribute("data-doc"), -1); });
-  });
-  document.querySelectorAll(".pg-next").forEach(function (btn) {
-    btn.addEventListener("click", function () { step(btn.getAttribute("data-doc"), 1); });
-  });
-
-  // TOC links to a specific page anchor (#docid-pN) should also flip the viewer to that page
-  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
-    a.addEventListener("click", function () {
-      var href = a.getAttribute("href").slice(1);
-      var m = href.match(/^(.+)-p(\d+)$/);
-      if (m) showPage(m[1], m[2]);
+      var target = document.getElementById(sel.value);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 

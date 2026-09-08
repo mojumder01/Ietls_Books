@@ -189,11 +189,6 @@ h1.page-title{
 }
 .page-jump select{padding:5px 8px; border-radius:8px; border:1px solid var(--border);}
 .page-jump{flex-wrap:wrap;}
-.pg-prev,.pg-next{
-  padding:5px 10px; border-radius:8px; border:1px solid var(--border);
-  background:#fff; cursor:pointer; font-size:.8rem; color:var(--text);
-}
-.pg-prev:hover,.pg-next:hover{background:var(--accent-soft); border-color:var(--accent);}
 
 .pdf-page{padding-top:6px; margin-bottom:10px; scroll-margin-top:20px;}
 .pdf-page + .pdf-page{border-top:1px dashed var(--border); padding-top:14px;}
