@@ -113,6 +113,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             👥 Users
           </Link>
+          <Link
+            href="/admin/spelling"
+            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+          >
+            ✏️ Spelling
+          </Link>
+          <Link
+            href="/admin/pronunciation"
+            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+          >
+            🔊 Pronunciation
+          </Link>
+          <Link
+            href="/admin/tongue-twisters"
+            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+          >
+            🌪️ Tongue Twisters
+          </Link>
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-700">
