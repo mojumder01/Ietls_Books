@@ -197,25 +197,28 @@ export interface Dictionary {
 
 export interface SpellingPractice {
   id: string;
-  word: string;
-  difficulty: DifficultyLevel;
-  hint: string;
-  level: IELTSLevel;
+  pronunciation: string;
+  correctSpelling: string;
+  createdAt?: Date;
 }
 
 export interface TongueTwister {
   id: string;
   text: string;
   difficulty: DifficultyLevel;
-  focus: string; // which sounds to focus on
-  audioUrl?: string;
+  createdAt?: Date;
 }
 
 export interface PronunciationLesson {
   id: string;
   title: string;
-  soundsFocused: string[];
-  examples: { word: string; audioUrl: string }[];
-  difficulty: DifficultyLevel;
-  level: IELTSLevel;
+  explanation: string;
+  audioUrl?: string;
+  examples?: string[];
+  tips?: string[];
+  createdAt?: Date;
 }
+
+// Type aliases for Firestore collection names
+export type Reading = ReadingPassage;
+export type Listening = ListeningPractice;
