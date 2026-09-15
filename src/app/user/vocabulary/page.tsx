@@ -38,6 +38,9 @@ export default function VocabularyPractice() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCompleted, setShowCompleted] = useState(true);
   const [showImportant, setShowImportant] = useState(false);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
 
   // Get current user
   useEffect(() => {
@@ -71,6 +74,16 @@ export default function VocabularyPractice() {
             progressData[doc.data().vocabId] = doc.data() as StudentProgress;
           });
           setProgress(progressData);
+
+          // Fetch user notes
+          const notesSnapshot = await getDocs(
+            query(collection(db, 'student_vocabulary_notes'), where('userId', '==', userId))
+          );
+          const notesData: Record<string, string> = {};
+          notesSnapshot.docs.forEach(doc => {
+            notesData[doc.data().vocabId] = doc.data().note;
+          });
+          setNotes(notesData);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -200,6 +213,44 @@ export default function VocabularyPractice() {
     }
   };
 
+  const saveNote = async (vocabId: string, noteContent: string) => {
+    if (!userId) return;
+
+    try {
+      const docId = `${userId}_${vocabId}`;
+      await setDoc(
+        doc(db, 'student_vocabulary_notes', docId),
+        {
+          vocabId,
+          userId,
+          note: noteContent,
+          lastEdited: new Date(),
+        },
+        { merge: true }
+      );
+
+      setNotes({ ...notes, [vocabId]: noteContent });
+      setEditingNoteId(null);
+      setNoteText('');
+    } catch (error) {
+      console.error('Error saving note:', error);
+    }
+  };
+
+  const deleteNote = async (vocabId: string) => {
+    if (!userId) return;
+
+    try {
+      const docId = `${userId}_${vocabId}`;
+      await deleteDoc(doc(db, 'student_vocabulary_notes', docId));
+      const updatedNotes = { ...notes };
+      delete updatedNotes[vocabId];
+      setNotes(updatedNotes);
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
+  };
+
   if (loading) {
     return <div className="p-6 text-center">Loading vocabulary...</div>;
   }
@@ -278,85 +329,86 @@ export default function VocabularyPractice() {
           </div>
         </div>
 
-        {/* Vocabulary Table */}
+        {/* Vocabulary Table - Responsive */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-indigo-600 text-white">
+            <table className="w-full text-sm">
+              <thead className="bg-indigo-600 text-white sticky top-0">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Word</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Pronunciation</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Bengali Meaning</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Example</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Example (Bengali)</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Difficulty</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Level</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Part of Speech</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Sentence Type</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Tense</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold">Actions</th>
+                  <th className="px-4 py-3 text-left font-semibold">Word</th>
+                  <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">Pronunciation</th>
+                  <th className="px-4 py-3 text-left font-semibold">Meaning (BN)</th>
+                  <th className="px-4 py-3 text-left font-semibold hidden md:table-cell">Example</th>
+                  <th className="px-4 py-3 text-left font-semibold hidden lg:table-cell">Diff</th>
+                  <th className="px-4 py-3 text-left font-semibold hidden lg:table-cell">Level</th>
+                  <th className="px-4 py-3 text-left font-semibold hidden xl:table-cell">Notes</th>
+                  <th className="px-4 py-3 text-center font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((word, index) => (
+                {filtered.map((word) => (
                   <tr
                     key={word.id}
                     className={`border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition ${
                       progress[word.id]?.completed ? 'bg-green-50 dark:bg-green-900/10' : ''
                     }`}
                   >
-                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{word.word}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">{word.pronunciation}</td>
-                    <td className="px-6 py-4 text-slate-900 dark:text-white">{word.bengaliMeaning}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm max-w-xs truncate">{word.example}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm max-w-xs truncate">{word.exampleBengali}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`text-xs px-3 py-1 rounded font-semibold whitespace-nowrap ${
-                          word.difficulty === 'easy'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                            : word.difficulty === 'medium'
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                        }`}
-                      >
-                        {word.difficulty}
-                      </span>
+                    <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">{word.word}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 hidden sm:table-cell text-xs">{word.pronunciation}</td>
+                    <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{word.bengaliMeaning}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 hidden md:table-cell text-xs max-w-xs truncate">{word.example}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                        word.difficulty === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-900/30' :
+                        word.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30' :
+                        'bg-red-100 text-red-800 dark:bg-red-900/30'
+                      }`}>{word.difficulty}</span>
                     </td>
-                    <td className="px-6 py-4 text-slate-900 dark:text-white font-semibold">{word.level}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">{word.partOfSpeech}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">{word.typeOfSentence}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">{word.typeOfTense}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2 justify-center">
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white hidden lg:table-cell">{word.level}</td>
+                    <td className="px-4 py-3 hidden xl:table-cell">
+                      {notes[word.id] ? (
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 rounded">📝</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1 justify-center flex-wrap">
                         <button
                           onClick={() => pronounceWord(word.word)}
                           title="Pronounce"
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
+                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
                         >
                           🔊
                         </button>
                         <button
                           onClick={() => toggleCompleted(word.id)}
-                          title="Mark as completed"
-                          className={`px-3 py-1 text-sm rounded transition ${
+                          className={`px-2 py-1 text-xs rounded transition ${
                             progress[word.id]?.completed
                               ? 'bg-green-600 text-white'
-                              : 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white hover:bg-green-600'
+                              : 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white'
                           }`}
                         >
                           ✓
                         </button>
                         <button
                           onClick={() => toggleImportant(word.id)}
-                          title="Mark as important"
-                          className={`px-3 py-1 text-sm rounded transition ${
+                          className={`px-2 py-1 text-xs rounded transition ${
                             progress[word.id]?.important
                               ? 'bg-yellow-500 text-white'
-                              : 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white hover:bg-yellow-500'
+                              : 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white'
                           }`}
                         >
                           ⭐
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingNoteId(word.id);
+                            setNoteText(notes[word.id] || '');
+                          }}
+                          className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition"
+                        >
+                          📝
                         </button>
                       </div>
                     </td>
@@ -366,6 +418,49 @@ export default function VocabularyPractice() {
             </table>
           </div>
         </div>
+
+        {/* Note Editor Modal */}
+        {editingNoteId && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                Note: {filtered.find(w => w.id === editingNoteId)?.word}
+              </h3>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white mb-4"
+                rows={5}
+                placeholder="Add your notes here..."
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => saveNote(editingNoteId, noteText)}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+                >
+                  Save
+                </button>
+                {notes[editingNoteId] && (
+                  <button
+                    onClick={() => deleteNote(editingNoteId)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+                  >
+                    Delete
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setEditingNoteId(null);
+                    setNoteText('');
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-semibold rounded-lg transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {filtered.length === 0 && (
           <div className="text-center py-12">

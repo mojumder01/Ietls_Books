@@ -45,6 +45,9 @@ export default function VocabularyManagement() {
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'number' | 'select' | 'html'>('text');
+  const [duplicates, setDuplicates] = useState<Record<string, string[]>>({});
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [selectedDuplicates, setSelectedDuplicates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchVocabularyItems();
@@ -60,11 +63,31 @@ export default function VocabularyManagement() {
         id: doc.id
       }));
       setVocabularyItems(items);
+      detectDuplicates(items);
     } catch (error: any) {
       console.error('Error fetching vocabulary items:', error);
     } finally {
       setDataLoading(false);
     }
+  };
+
+  const detectDuplicates = (items: any[]) => {
+    const wordMap: Record<string, string[]> = {};
+    items.forEach(item => {
+      const word = (item.word || '').toLowerCase().trim();
+      if (!wordMap[word]) {
+        wordMap[word] = [];
+      }
+      wordMap[word].push(item.id);
+    });
+
+    const duplicateMap: Record<string, string[]> = {};
+    Object.entries(wordMap).forEach(([word, ids]) => {
+      if (ids.length > 1) {
+        duplicateMap[word] = ids;
+      }
+    });
+    setDuplicates(duplicateMap);
   };
 
   const handleAddField = () => {
@@ -114,10 +137,62 @@ export default function VocabularyManagement() {
     try {
       await deleteDoc(doc(db, 'vocabulary', itemId));
       setVocabularyItems(vocabularyItems.filter(item => item.id !== itemId));
+      detectDuplicates(vocabularyItems.filter(item => item.id !== itemId));
       setMessage('✅ Vocabulary item deleted successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       setMessage(`❌ Error deleting item: ${error.message}`);
+    }
+  };
+
+  const handleSelectDuplicate = (itemId: string) => {
+    const newSelected = new Set(selectedDuplicates);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+    } else {
+      newSelected.add(itemId);
+    }
+    setSelectedDuplicates(newSelected);
+  };
+
+  const handleSelectAllDuplicates = (word: string) => {
+    const ids = duplicates[word] || [];
+    const newSelected = new Set(selectedDuplicates);
+    const allSelected = ids.every(id => newSelected.has(id));
+
+    ids.forEach(id => {
+      if (allSelected) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+    });
+    setSelectedDuplicates(newSelected);
+  };
+
+  const handleBulkDeleteDuplicates = async () => {
+    if (selectedDuplicates.size === 0) {
+      setMessage('❌ Please select items to delete');
+      return;
+    }
+
+    if (!confirm(`Delete ${selectedDuplicates.size} selected item(s)? This cannot be undone!`)) return;
+
+    try {
+      let successCount = 0;
+      for (const itemId of selectedDuplicates) {
+        await deleteDoc(doc(db, 'vocabulary', itemId));
+        successCount++;
+      }
+
+      const updatedItems = vocabularyItems.filter(item => !selectedDuplicates.has(item.id));
+      setVocabularyItems(updatedItems);
+      detectDuplicates(updatedItems);
+      setSelectedDuplicates(new Set());
+      setMessage(`✅ Deleted ${successCount} item(s) successfully!`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error: ${error.message}`);
     }
   };
 
@@ -293,6 +368,78 @@ export default function VocabularyManagement() {
         </button>
       </div>
 
+      {/* Duplicate Detection */}
+      {Object.keys(duplicates).length > 0 && (
+        <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6 border-2 border-amber-300 dark:border-amber-700">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-amber-900 dark:text-amber-200">
+              ⚠️ Found {Object.keys(duplicates).length} Duplicate Word(s)
+            </h2>
+            <button
+              onClick={() => setShowDuplicates(!showDuplicates)}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition"
+            >
+              {showDuplicates ? 'Hide' : 'Show'} Duplicates
+            </button>
+          </div>
+
+          {showDuplicates && (
+            <div className="space-y-3">
+              {Object.entries(duplicates).map(([word, ids]) => (
+                <div key={word} className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-amber-200 dark:border-amber-700">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-slate-900 dark:text-white">
+                      "{word}" - {ids.length} occurrences
+                    </h3>
+                    <button
+                      onClick={() => handleSelectAllDuplicates(word)}
+                      className="text-sm px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                    >
+                      {ids.every(id => selectedDuplicates.has(id)) ? 'Deselect All' : 'Select All'}
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {ids.map(id => {
+                      const item = vocabularyItems.find(v => v.id === id);
+                      return (
+                        <label key={id} className="flex items-center gap-3 p-2 bg-amber-50 dark:bg-amber-900/10 rounded hover:bg-amber-100 dark:hover:bg-amber-900/20 transition cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedDuplicates.has(id)}
+                            onChange={() => handleSelectDuplicate(id)}
+                            className="w-4 h-4"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{item?.bengaliMeaning || 'N/A'}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400">{item?.pronunciation || 'No pronunciation'}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {selectedDuplicates.size > 0 && (
+                <div className="flex gap-2 pt-4 border-t border-amber-200 dark:border-amber-700">
+                  <button
+                    onClick={handleBulkDeleteDuplicates}
+                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition"
+                  >
+                    🗑️ Delete {selectedDuplicates.size} Selected
+                  </button>
+                  <button
+                    onClick={() => setSelectedDuplicates(new Set())}
+                    className="px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-semibold rounded-lg transition"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Field Manager */}
       {showFieldManager && (
         <div className="mb-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6 border-2 border-purple-300 dark:border-purple-700">
@@ -430,8 +577,10 @@ export default function VocabularyManagement() {
             <div className="text-center py-8 text-slate-600 dark:text-slate-400">No vocabulary items yet</div>
           ) : (
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {vocabularyItems.map((item) => (
-                <div key={item.id} className="border border-slate-300 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-700/30">
+              {vocabularyItems.map((item) => {
+                const isDuplicate = Object.values(duplicates).flat().includes(item.id);
+                return (
+                <div key={item.id} className={`border rounded-lg p-4 ${isDuplicate ? 'border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20' : 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/30'}`}>
                   {editingId === item.id ? (
                     <div className="space-y-2">
                       {fields.map(field => (
@@ -459,7 +608,10 @@ export default function VocabularyManagement() {
                     </div>
                   ) : (
                     <>
-                      <h3 className="font-bold text-slate-900 dark:text-white mb-2">{item.word}</h3>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-slate-900 dark:text-white">{item.word}</h3>
+                        {isDuplicate && <span className="text-xs px-2 py-1 bg-amber-600 text-white rounded font-semibold">⚠️ DUPLICATE</span>}
+                      </div>
                       <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                         {fields.filter(f => f.name !== 'word').map(field => (
                           item[field.name] && (
@@ -487,7 +639,8 @@ export default function VocabularyManagement() {
                     </>
                   )}
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
