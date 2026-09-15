@@ -108,6 +108,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             📕 Books
           </Link>
           <Link
+            href="/admin/exams"
+            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+          >
+            📝 Mock Tests
+          </Link>
+          <Link
             href="/admin/users"
             className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
           >

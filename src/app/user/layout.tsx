@@ -95,6 +95,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           <NavLink href="/user/spelling" label="✏️ Spelling" isActive={isActive("/user/spelling")} onClick={() => setIsOpen(false)} />
           <NavLink href="/user/pronunciation" label="🔊 Pronunciation" isActive={isActive("/user/pronunciation")} onClick={() => setIsOpen(false)} />
           <NavLink href="/user/tongue-twisters" label="🌪️ Tongue Twisters" isActive={isActive("/user/tongue-twisters")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/exams" label="📝 Practice Exams" isActive={isActive("/user/exams")} onClick={() => setIsOpen(false)} />
           <NavLink href="/user/leaderboard" label="🏆 Leaderboard" isActive={isActive("/user/leaderboard")} onClick={() => setIsOpen(false)} />
 
           {isAdmin && (
