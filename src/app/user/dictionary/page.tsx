@@ -41,7 +41,7 @@ export default function Dictionary() {
           (entry) =>
             entry.word.toLowerCase().includes(term) ||
             entry.definition.toLowerCase().includes(term) ||
-            (entry.bangla && entry.bangla.toLowerCase().includes(term))
+            (entry.bengaliMeaning && entry.bengaliMeaning.toLowerCase().includes(term))
         )
       );
     }
@@ -90,21 +90,28 @@ export default function Dictionary() {
                 <p className="text-slate-900 dark:text-white">{entry.definition}</p>
               </div>
 
-              {entry.bangla && (
+              {entry.bengaliMeaning && (
                 <div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 uppercase font-semibold mb-1">
                     Bengali
                   </p>
-                  <p className="text-slate-900 dark:text-white">{entry.bangla}</p>
+                  <p className="text-slate-900 dark:text-white">{entry.bengaliMeaning}</p>
                 </div>
               )}
 
-              {entry.example && (
+              {entry.examples && entry.examples.length > 0 && (
                 <div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 uppercase font-semibold mb-1">
-                    Example
+                    Examples
                   </p>
-                  <p className="text-slate-700 dark:text-slate-300 italic">{entry.example}</p>
+                  <div className="space-y-2">
+                    {entry.examples.map((ex, idx) => (
+                      <div key={idx}>
+                        <p className="text-slate-700 dark:text-slate-300 italic">{ex.english}</p>
+                        {ex.bengali && <p className="text-slate-600 dark:text-slate-400 text-sm">{ex.bengali}</p>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
