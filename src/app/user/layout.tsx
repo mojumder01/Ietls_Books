@@ -2,16 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FiMenu, FiX } from 'react-icons/fi';
 import { doc, getDoc } from 'firebase/firestore';
+
+function NavLink({ href, label, isActive, onClick }: { href: string; label: string; isActive: boolean; onClick: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`block px-4 py-2 rounded-lg transition font-medium ${
+        isActive
+          ? 'bg-indigo-600 text-white shadow-md'
+          : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const isActive = (href: string) => pathname === href;
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
@@ -63,85 +82,20 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">🎓 IELTS</h1>
         </div>
 
-        <nav className="p-4 space-y-2">
-          <Link
-            href="/user/dashboard"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            📊 Dashboard
-          </Link>
-          <Link
-            href="/user/vocabulary"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            🔤 Vocabulary
-          </Link>
-          <Link
-            href="/user/grammar"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            📐 Grammar
-          </Link>
-          <Link
-            href="/user/reading"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            📖 Reading
-          </Link>
-          <Link
-            href="/user/listening"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            🎧 Listening
-          </Link>
-          <Link
-            href="/user/writing"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            ✍️ Writing
-          </Link>
-          <Link
-            href="/user/speaking"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            🗣️ Speaking
-          </Link>
-          <Link
-            href="/user/dictionary"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            📚 Dictionary
-          </Link>
-          <Link
-            href="/user/books"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            📕 Books
-          </Link>
-          <Link
-            href="/user/spelling"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            ✏️ Spelling
-          </Link>
-          <Link
-            href="/user/pronunciation"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            🔊 Pronunciation
-          </Link>
-          <Link
-            href="/user/tongue-twisters"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            🌪️ Tongue Twisters
-          </Link>
-          <Link
-            href="/user/leaderboard"
-            className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-          >
-            🏆 Leaderboard
-          </Link>
+        <nav className="p-4 space-y-2 overflow-y-auto h-full pb-20">
+          <NavLink href="/user/dashboard" label="📊 Dashboard" isActive={isActive("/user/dashboard")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/vocabulary" label="🔤 Vocabulary" isActive={isActive("/user/vocabulary")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/grammar" label="📐 Grammar" isActive={isActive("/user/grammar")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/reading" label="📖 Reading" isActive={isActive("/user/reading")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/listening" label="🎧 Listening" isActive={isActive("/user/listening")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/writing" label="✍️ Writing" isActive={isActive("/user/writing")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/speaking" label="🗣️ Speaking" isActive={isActive("/user/speaking")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/dictionary" label="📚 Dictionary" isActive={isActive("/user/dictionary")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/books" label="📕 Books" isActive={isActive("/user/books")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/spelling" label="✏️ Spelling" isActive={isActive("/user/spelling")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/pronunciation" label="🔊 Pronunciation" isActive={isActive("/user/pronunciation")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/tongue-twisters" label="🌪️ Tongue Twisters" isActive={isActive("/user/tongue-twisters")} onClick={() => setIsOpen(false)} />
+          <NavLink href="/user/leaderboard" label="🏆 Leaderboard" isActive={isActive("/user/leaderboard")} onClick={() => setIsOpen(false)} />
 
           {isAdmin && (
             <>
@@ -149,12 +103,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               <div className="px-4 py-2 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">
                 Admin
               </div>
-              <Link
-                href="/admin"
-                className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-              >
-                ⚙️ Admin Panel
-              </Link>
+              <NavLink href="/admin" label="⚙️ Admin Panel" isActive={isActive("/admin")} onClick={() => setIsOpen(false)} />
             </>
           )}
         </nav>
