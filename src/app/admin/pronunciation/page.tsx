@@ -201,6 +201,59 @@ Practice slowly first"
             {loading ? 'Adding...' : 'Add Pronunciation Lesson'}
           </button>
         </form>
+
+        <div className="mt-8 pt-8 border-t border-slate-300 dark:border-slate-600">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Batch Upload CSV</h2>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => downloadCSVTemplate('pronunciation_template.csv', PRONUNCIATION_CSV_HEADERS)}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+            >
+              Download CSV Template
+            </button>
+
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                onChange={handleCSVUpload}
+                disabled={csvLoading}
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={csvLoading}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
+              >
+                {csvLoading ? 'Uploading...' : 'Upload CSV'}
+              </button>
+            </div>
+
+            {csvMessage && (
+              <div
+                className={`p-3 rounded-lg text-sm ${
+                  csvMessage.includes('✅')
+                    ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                    : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                }`}
+              >
+                {csvMessage}
+              </div>
+            )}
+
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">CSV Format Example:</p>
+              <pre className="text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 p-2 rounded overflow-x-auto">
+{`word,pronunciation,meaning,level
+"thought","/θɔːt/","past tense of think",B1
+"through","/θruː/","preposition indicating movement",A2
+"though","/ðoʊ/","even though",B1`}
+              </pre>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
