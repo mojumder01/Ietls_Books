@@ -16,59 +16,6 @@ export default function BooksManagement() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [csvLoading, setCsvLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setCsvLoading(true);
-    setMessage('');
-
-    try {
-      const text = await file.text();
-      const rows = parseCSV(text);
-
-      if (rows.length === 0) {
-        setMessage('❌ No valid data found in CSV');
-        setCsvLoading(false);
-        return;
-      }
-
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const row of rows) {
-        try {
-          await addDoc(collection(db, 'books'), {
-            title: row.title || '',
-            author: row.author || '',
-            description: row.description || '',
-            difficulty: row.difficulty || 'medium',
-            level: row.level || 'B1',
-            coverUrl: row.coverUrl || '',
-            pdfUrl: '',
-            type: 'Study Material',
-            createdAt: new Date(),
-          });
-          successCount++;
-        } catch (error) {
-          errorCount++;
-        }
-      }
-
-      setMessage(`✅ Uploaded ${successCount} books${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setTimeout(() => setMessage(''), 5000);
-    } catch (error: any) {
-      setMessage(`❌ Error: ${error.message}`);
-    } finally {
-      setCsvLoading(false);
-    }
-  };
-  const [csvLoading, setCsvLoading] = useState(false);
   const [csvMessage, setCsvMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,14 +56,14 @@ export default function BooksManagement() {
     if (!file) return;
 
     setCsvLoading(true);
-    setCsvMessage('');
+    setMessage('');
 
     try {
       const text = await file.text();
       const rows = parseCSV(text);
 
       if (rows.length === 0) {
-        setCsvMessage('❌ No valid data found in CSV file');
+        setMessage('❌ No valid data found in CSV file');
         return;
       }
 
@@ -138,11 +85,11 @@ export default function BooksManagement() {
         }
       }
 
-      setCsvMessage(`✅ Successfully added ${successCount} books from CSV!`);
+      setMessage(`✅ Successfully added ${successCount} books from CSV!`);
       if (fileInputRef.current) fileInputRef.current.value = '';
-      setTimeout(() => setCsvMessage(''), 4000);
+      setTimeout(() => setMessage(''), 4000);
     } catch (error: any) {
-      setCsvMessage(`❌ Error processing CSV: ${error.message}`);
+      setMessage(`❌ Error processing CSV: ${error.message}`);
     } finally {
       setCsvLoading(false);
     }
