@@ -151,7 +151,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               </div>
               <Link
                 href="/admin"
-                className="block px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition font-semibold"
+                className="block px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
               >
                 ⚙️ Admin Panel
               </Link>
