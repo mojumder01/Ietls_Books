@@ -22,8 +22,16 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         // Fetch user role from Firestore
         try {
           const userDoc = await getDoc(doc(db, 'users', authUser.uid));
-          if (userDoc.exists() && userDoc.data().role === 'admin') {
-            setIsAdmin(true);
+          console.log('User document exists:', userDoc.exists());
+          if (userDoc.exists()) {
+            console.log('User data:', userDoc.data());
+            console.log('User role:', userDoc.data().role);
+            if (userDoc.data().role === 'admin') {
+              console.log('Setting admin to true');
+              setIsAdmin(true);
+            }
+          } else {
+            console.log('User document does not exist for UID:', authUser.uid);
           }
         } catch (error) {
           console.error('Error fetching user role:', error);
