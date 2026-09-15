@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { UserProgress } from '@/types';
+import { APP_VERSION } from '@/config/version';
 
 export default function Dashboard() {
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -225,6 +226,13 @@ export default function Dashboard() {
             <span className="text-xl">📖</span>
           </div>
         </div>
+      </div>
+
+      {/* Version Footer */}
+      <div className="text-center py-4">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          IELTS Master v{APP_VERSION}
+        </p>
       </div>
     </div>
   );

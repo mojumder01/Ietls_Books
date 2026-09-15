@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { APP_VERSION } from '@/config/version';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -83,6 +84,12 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
+
+        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 text-center">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Version {APP_VERSION}
+          </p>
+        </div>
       </div>
     </div>
   );
