@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { APP_VERSION } from '@/config/version';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -89,6 +90,12 @@ export default function AdminDashboard() {
             <p className="font-medium text-slate-900 dark:text-white">Add Listening</p>
           </a>
         </div>
+      </div>
+
+      <div className="text-center py-4">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          IELTS Master Admin v{APP_VERSION}
+        </p>
       </div>
     </div>
   );
