@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import { downloadCSVTemplate, parseCSV, BOOKS_CSV_HEADERS } from '@/utils/csvUtils';
 
 export default function BooksManagement() {
@@ -17,7 +18,10 @@ export default function BooksManagement() {
   const [message, setMessage] = useState('');
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvMessage, setCsvMessage] = useState('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadingPDF, setUploadingPDF] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const [bookItems, setBookItems] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
@@ -88,16 +92,35 @@ export default function BooksManagement() {
     setMessage('');
 
     try {
+      let pdfUrl = formData.pdfUrl;
+
+      if (pdfFile) {
+        setUploadingPDF(true);
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${pdfFile.name}`;
+        const storageRef = ref(storage, `books/${fileName}`);
+
+        await uploadBytes(storageRef, pdfFile);
+        pdfUrl = await getDownloadURL(storageRef);
+        setUploadingPDF(false);
+      }
+
+      if (!pdfUrl) {
+        setMessage('❌ Please provide either a PDF file or URL');
+        setLoading(false);
+        return;
+      }
+
       await addDoc(collection(db, 'books'), {
         title: formData.title,
         author: formData.author,
-        pdfUrl: formData.pdfUrl,
+        pdfUrl,
         type: formData.type,
         description: formData.description,
         createdAt: new Date(),
       });
 
-      setMessage('✅ Book added!');
+      setMessage('✅ Book added successfully!');
       setFormData({
         title: '',
         author: '',
@@ -105,10 +128,14 @@ export default function BooksManagement() {
         type: 'Cambridge',
         description: '',
       });
+      setPdfFile(null);
+      if (pdfInputRef.current) pdfInputRef.current.value = '';
+      await fetchBooks();
 
       setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       setMessage(`❌ Error: ${error.message}`);
+      setUploadingPDF(false);
     } finally {
       setLoading(false);
     }
@@ -191,15 +218,33 @@ export default function BooksManagement() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              PDF URL
+              PDF File or URL
             </label>
-            <input
-              type="url"
-              value={formData.pdfUrl}
-              onChange={(e) => setFormData({ ...formData, pdfUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-              required
-            />
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Upload PDF File:</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  ref={pdfInputRef}
+                  onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  disabled={uploadingPDF}
+                />
+                {pdfFile && <p className="text-xs text-green-600 mt-1">✓ {pdfFile.name}</p>}
+              </div>
+              <div className="text-center text-slate-500 dark:text-slate-400">OR</div>
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">External PDF URL:</label>
+                <input
+                  type="url"
+                  value={formData.pdfUrl}
+                  onChange={(e) => setFormData({ ...formData, pdfUrl: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  placeholder="https://example.com/book.pdf"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
@@ -241,10 +286,10 @@ export default function BooksManagement() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || uploadingPDF}
             className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition disabled:opacity-50"
           >
-            {loading ? 'Adding...' : 'Add Book'}
+            {uploadingPDF ? 'Uploading PDF...' : loading ? 'Adding...' : 'Add Book'}
           </button>
         </form>
       </div>

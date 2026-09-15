@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Book } from '@/types';
+import PDFViewer from '@/components/PDFViewer';
 
 export default function Books() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -11,6 +12,7 @@ export default function Books() {
   const [selectedType, setSelectedType] = useState('all');
   const [loading, setLoading] = useState(true);
   const [types, setTypes] = useState<string[]>([]);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -100,14 +102,12 @@ export default function Books() {
                 </span>
               </div>
 
-              <a
-                href={book.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full block text-center py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition"
+              <button
+                onClick={() => setSelectedBook(book)}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition"
               >
-                View PDF
-              </a>
+                📖 Read Book
+              </button>
             </div>
           </div>
         ))}
@@ -116,6 +116,32 @@ export default function Books() {
       {filtered.length === 0 && (
         <div className="text-center py-12">
           <p className="text-slate-600 dark:text-slate-400">No books available yet</p>
+        </div>
+      )}
+
+      {/* PDF Viewer Modal */}
+      {selectedBook && (
+        <div className="fixed inset-0 bg-black/50 z-50 p-4 flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-800 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto shadow-2xl">
+            {/* Header */}
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedBook.title}</h2>
+                <p className="text-slate-600 dark:text-slate-400">by {selectedBook.author}</p>
+              </div>
+              <button
+                onClick={() => setSelectedBook(null)}
+                className="text-3xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* PDF Viewer */}
+            <div className="p-6">
+              <PDFViewer pdfUrl={selectedBook.pdfUrl} title={selectedBook.title} />
+            </div>
+          </div>
         </div>
       )}
     </div>
