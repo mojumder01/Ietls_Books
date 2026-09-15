@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { useState, useRef, useEffect } from 'react';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { downloadCSVTemplate, parseCSV, SPEAKING_CSV_HEADERS } from '@/utils/csvUtils';
 
@@ -18,6 +18,43 @@ export default function SpeakingManagement() {
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvMessage, setCsvMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [speakingItems, setSpeakingItems] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+
+  useEffect(() => {
+    fetchSpeakingItems();
+  }, []);
+
+  const fetchSpeakingItems = async () => {
+    setDataLoading(true);
+    try {
+      const q = query(collection(db, 'speaking_practices'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const items = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      setSpeakingItems(items);
+    } catch (error: any) {
+      console.error('Error fetching speaking items:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm('Are you sure you want to delete this speaking prompt?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'speaking_practices', itemId));
+      setSpeakingItems(speakingItems.filter(item => item.id !== itemId));
+      setMessage('✅ Speaking prompt deleted successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error deleting item: ${error.message}`);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +276,50 @@ export default function SpeakingManagement() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Manage Speaking Items */}
+      <div className="mt-6 bg-white dark:bg-slate-800 rounded-lg p-6 shadow">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">📋 Manage Speaking Prompts</h2>
+
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Total Prompts: <span className="font-bold text-slate-900 dark:text-white">{speakingItems.length}</span>
+        </div>
+
+        {dataLoading ? (
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading speaking prompts...</div>
+        ) : speakingItems.length === 0 ? (
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">No speaking prompts yet. Add some using the form above or upload a CSV file.</div>
+        ) : (
+          <div className="space-y-3">
+            {speakingItems.map((item) => (
+              <div key={item.id} className="border border-slate-300 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-slate-900 dark:text-white font-medium">{item.topic}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 line-clamp-1">{item.cueCard}</p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 rounded text-xs font-semibold whitespace-nowrap">{item.timeLimit}s</span>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                      item.difficulty === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                      item.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                      'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                    }`}>
+                      {item.difficulty}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteItem(item.id)}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

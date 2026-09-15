@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { useState, useRef, useEffect } from 'react';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { downloadCSVTemplate, parseCSV, WRITING_CSV_HEADERS } from '@/utils/csvUtils';
 
@@ -19,6 +19,43 @@ export default function WritingManagement() {
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvMessage, setCsvMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [writingItems, setWritingItems] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+
+  useEffect(() => {
+    fetchWritingItems();
+  }, []);
+
+  const fetchWritingItems = async () => {
+    setDataLoading(true);
+    try {
+      const q = query(collection(db, 'writing_practices'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const items = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      setWritingItems(items);
+    } catch (error: any) {
+      console.error('Error fetching writing items:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm('Are you sure you want to delete this writing prompt?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'writing_practices', itemId));
+      setWritingItems(writingItems.filter(item => item.id !== itemId));
+      setMessage('✅ Writing prompt deleted successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error deleting item: ${error.message}`);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,6 +294,50 @@ export default function WritingManagement() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Manage Writing Items */}
+      <div className="mt-6 bg-white dark:bg-slate-800 rounded-lg p-6 shadow">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">📋 Manage Writing Prompts</h2>
+
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Total Prompts: <span className="font-bold text-slate-900 dark:text-white">{writingItems.length}</span>
+        </div>
+
+        {dataLoading ? (
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading writing prompts...</div>
+        ) : writingItems.length === 0 ? (
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">No writing prompts yet. Add some using the form above or upload a CSV file.</div>
+        ) : (
+          <div className="space-y-3">
+            {writingItems.map((item) => (
+              <div key={item.id} className="border border-slate-300 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-slate-900 dark:text-white font-medium">{item.topic}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 line-clamp-1">{item.description}</p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    <span className="px-2 py-1 bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400 rounded text-xs font-semibold whitespace-nowrap">{item.type}</span>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                      item.difficulty === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                      item.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                      'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                    }`}>
+                      {item.difficulty}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteItem(item.id)}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

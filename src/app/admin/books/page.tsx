@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { useState, useRef, useEffect } from 'react';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { downloadCSVTemplate, parseCSV, BOOKS_CSV_HEADERS } from '@/utils/csvUtils';
 
@@ -18,6 +18,69 @@ export default function BooksManagement() {
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvMessage, setCsvMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [bookItems, setBookItems] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<any>({});
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    setDataLoading(true);
+    try {
+      const q = query(collection(db, 'books'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const items = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+      setBookItems(items);
+    } catch (error: any) {
+      console.error('Error fetching books:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm('Are you sure you want to delete this book?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'books', itemId));
+      setBookItems(bookItems.filter(item => item.id !== itemId));
+      setMessage('✅ Book deleted successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error deleting book: ${error.message}`);
+    }
+  };
+
+  const handleEditItem = (item: any) => {
+    setEditingId(item.id);
+    setEditFormData(item);
+  };
+
+  const handleUpdateItem = async (itemId: string) => {
+    try {
+      await updateDoc(doc(db, 'books', itemId), editFormData);
+      setBookItems(bookItems.map(item =>
+        item.id === itemId ? { ...item, ...editFormData } : item
+      ));
+      setEditingId(null);
+      setMessage('✅ Book updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error updating book: ${error.message}`);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditFormData({});
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,6 +295,116 @@ title,author,description,difficulty,level,coverUrl
             </code>
           </div>
         </div>
+      </div>
+
+      {/* Manage Books */}
+      <div className="mt-6 bg-white dark:bg-slate-800 rounded-lg p-6 shadow">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">📋 Manage Books</h2>
+
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Total Books: <span className="font-bold text-slate-900 dark:text-white">{bookItems.length}</span>
+        </div>
+
+        {dataLoading ? (
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading books...</div>
+        ) : bookItems.length === 0 ? (
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">No books yet. Add some using the form above or upload a CSV file.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-300 dark:border-slate-600">
+                  <th className="px-4 py-2 text-left text-slate-700 dark:text-slate-300 font-semibold">Title</th>
+                  <th className="px-4 py-2 text-left text-slate-700 dark:text-slate-300 font-semibold">Author</th>
+                  <th className="px-4 py-2 text-left text-slate-700 dark:text-slate-300 font-semibold">Type</th>
+                  <th className="px-4 py-2 text-left text-slate-700 dark:text-slate-300 font-semibold">Description</th>
+                  <th className="px-4 py-2 text-left text-slate-700 dark:text-slate-300 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookItems.map((item) => (
+                  <tr key={item.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                    {editingId === item.id ? (
+                      <>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            value={editFormData.title || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-xs"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            value={editFormData.author || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, author: e.target.value })}
+                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-xs"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            value={editFormData.type || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-xs"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <textarea
+                            value={editFormData.description || ''}
+                            onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-xs"
+                            rows={2}
+                          />
+                        </td>
+                        <td className="px-4 py-3 space-x-2 flex">
+                          <button
+                            onClick={() => handleUpdateItem(item.id)}
+                            className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded transition"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-semibold rounded transition"
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{item.title}</td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{item.author}</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 rounded text-xs font-semibold">
+                            {item.type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300 truncate max-w-xs">{item.description}</td>
+                        <td className="px-4 py-3 space-x-2 flex">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded transition"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
