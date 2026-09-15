@@ -331,18 +331,18 @@ export default function VocabularyPractice() {
 
         {/* Vocabulary Table - Responsive */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-indigo-600 text-white sticky top-0">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-indigo-600 text-white sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold">Word</th>
-                  <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">Pronunciation</th>
-                  <th className="px-4 py-3 text-left font-semibold">Meaning (BN)</th>
-                  <th className="px-4 py-3 text-left font-semibold hidden md:table-cell">Example</th>
-                  <th className="px-4 py-3 text-left font-semibold hidden lg:table-cell">Diff</th>
-                  <th className="px-4 py-3 text-left font-semibold hidden lg:table-cell">Level</th>
-                  <th className="px-4 py-3 text-left font-semibold hidden xl:table-cell">Notes</th>
-                  <th className="px-4 py-3 text-center font-semibold">Actions</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-20">Word</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-24 hidden sm:table-cell">Pronunciation</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-28">Meaning (BN)</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-32 hidden md:table-cell">Example</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-16 hidden lg:table-cell">Diff</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-16 hidden lg:table-cell">Level</th>
+                  <th className="px-3 py-3 text-left font-semibold min-w-8 hidden xl:table-cell">Note</th>
+                  <th className="px-3 py-3 text-center font-semibold min-w-32">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -353,37 +353,40 @@ export default function VocabularyPractice() {
                       progress[word.id]?.completed ? 'bg-green-50 dark:bg-green-900/10' : ''
                     }`}
                   >
-                    <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">{word.word}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 hidden sm:table-cell text-xs">{word.pronunciation}</td>
-                    <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{word.bengaliMeaning}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 hidden md:table-cell text-xs max-w-xs truncate">{word.example}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                    <td className="px-3 py-4 font-bold text-slate-900 dark:text-white">{word.word}</td>
+                    <td className="px-3 py-4 text-slate-600 dark:text-slate-400 hidden sm:table-cell text-xs whitespace-normal">{word.pronunciation}</td>
+                    <td className="px-3 py-4 text-slate-900 dark:text-white font-medium whitespace-normal">{word.bengaliMeaning}</td>
+                    <td className="px-3 py-4 text-slate-600 dark:text-slate-400 hidden md:table-cell text-xs whitespace-normal">{word.example}</td>
+                    <td className="px-3 py-4 hidden lg:table-cell">
+                      <span className={`text-xs px-2 py-1 rounded font-semibold whitespace-nowrap ${
                         word.difficulty === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-900/30' :
                         word.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30' :
                         'bg-red-100 text-red-800 dark:bg-red-900/30'
                       }`}>{word.difficulty}</span>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white hidden lg:table-cell">{word.level}</td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-3 py-4 font-semibold text-slate-900 dark:text-white hidden lg:table-cell whitespace-nowrap">{word.level}</td>
+                    <td className="px-3 py-4 hidden xl:table-cell">
                       {notes[word.id] ? (
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 rounded">📝</span>
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 rounded inline-block">📝</span>
                       ) : (
                         <span className="text-xs text-slate-400">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-4">
                       <div className="flex gap-1 justify-center flex-wrap">
                         <button
+                          type="button"
                           onClick={() => pronounceWord(word.word)}
                           title="Pronounce"
-                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
+                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition cursor-pointer z-20"
                         >
                           🔊
                         </button>
                         <button
+                          type="button"
                           onClick={() => toggleCompleted(word.id)}
-                          className={`px-2 py-1 text-xs rounded transition ${
+                          title="Mark as complete"
+                          className={`px-2 py-1 text-xs rounded transition cursor-pointer z-20 ${
                             progress[word.id]?.completed
                               ? 'bg-green-600 text-white'
                               : 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white'
@@ -392,8 +395,10 @@ export default function VocabularyPractice() {
                           ✓
                         </button>
                         <button
+                          type="button"
                           onClick={() => toggleImportant(word.id)}
-                          className={`px-2 py-1 text-xs rounded transition ${
+                          title="Mark as important"
+                          className={`px-2 py-1 text-xs rounded transition cursor-pointer z-20 ${
                             progress[word.id]?.important
                               ? 'bg-yellow-500 text-white'
                               : 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-white'
@@ -402,11 +407,13 @@ export default function VocabularyPractice() {
                           ⭐
                         </button>
                         <button
+                          type="button"
                           onClick={() => {
                             setEditingNoteId(word.id);
                             setNoteText(notes[word.id] || '');
                           }}
-                          className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition"
+                          title="Add/edit notes"
+                          className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition cursor-pointer z-20"
                         >
                           📝
                         </button>

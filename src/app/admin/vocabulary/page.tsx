@@ -196,6 +196,59 @@ export default function VocabularyManagement() {
     }
   };
 
+  const handleDeleteAllDuplicates = async () => {
+    const allDuplicateIds = Object.values(duplicates).flat();
+    if (allDuplicateIds.length === 0) {
+      setMessage('❌ No duplicates to delete');
+      return;
+    }
+
+    if (!confirm(`Delete ALL ${allDuplicateIds.length} duplicate items? This cannot be undone!`)) return;
+
+    try {
+      let successCount = 0;
+      for (const itemId of allDuplicateIds) {
+        await deleteDoc(doc(db, 'vocabulary', itemId));
+        successCount++;
+      }
+
+      const updatedItems = vocabularyItems.filter(item => !allDuplicateIds.includes(item.id));
+      setVocabularyItems(updatedItems);
+      detectDuplicates(updatedItems);
+      setSelectedDuplicates(new Set());
+      setMessage(`✅ Deleted ${successCount} duplicate item(s) successfully!`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error: ${error.message}`);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (vocabularyItems.length === 0) {
+      setMessage('❌ No items to delete');
+      return;
+    }
+
+    if (!confirm(`Delete ALL ${vocabularyItems.length} vocabulary items? This cannot be undone!`)) return;
+    if (!confirm('Are you REALLY sure? This will delete everything!')) return;
+
+    try {
+      let successCount = 0;
+      for (const item of vocabularyItems) {
+        await deleteDoc(doc(db, 'vocabulary', item.id));
+        successCount++;
+      }
+
+      setVocabularyItems([]);
+      setDuplicates({});
+      setSelectedDuplicates(new Set());
+      setMessage(`✅ Deleted ${successCount} item(s) successfully!`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage(`❌ Error: ${error.message}`);
+    }
+  };
+
   const handleEditItem = (item: any) => {
     setEditingId(item.id);
     setEditFormData(item);
@@ -419,22 +472,30 @@ export default function VocabularyManagement() {
                   </div>
                 </div>
               ))}
-              {selectedDuplicates.size > 0 && (
-                <div className="flex gap-2 pt-4 border-t border-amber-200 dark:border-amber-700">
-                  <button
-                    onClick={handleBulkDeleteDuplicates}
-                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition"
-                  >
-                    🗑️ Delete {selectedDuplicates.size} Selected
-                  </button>
-                  <button
-                    onClick={() => setSelectedDuplicates(new Set())}
-                    className="px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-semibold rounded-lg transition"
-                  >
-                    Clear Selection
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-2 pt-4 border-t border-amber-200 dark:border-amber-700 flex-wrap">
+                {selectedDuplicates.size > 0 && (
+                  <>
+                    <button
+                      onClick={handleBulkDeleteDuplicates}
+                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition min-w-fit"
+                    >
+                      🗑️ Delete {selectedDuplicates.size} Selected
+                    </button>
+                    <button
+                      onClick={() => setSelectedDuplicates(new Set())}
+                      className="px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-semibold rounded-lg transition"
+                    >
+                      Clear Selection
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={handleDeleteAllDuplicates}
+                  className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition min-w-fit"
+                >
+                  🗑️ Delete All {Object.keys(duplicates).length} Duplicates
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -569,7 +630,17 @@ export default function VocabularyManagement() {
 
         {/* Management */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">📋 Manage Words ({vocabularyItems.length})</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">📋 Manage Words ({vocabularyItems.length})</h2>
+            {vocabularyItems.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition text-sm"
+              >
+                ⚠️ Clear All
+              </button>
+            )}
+          </div>
 
           {dataLoading ? (
             <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading...</div>
