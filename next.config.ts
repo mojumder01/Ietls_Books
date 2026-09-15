@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Optimize for Vercel deployment
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,

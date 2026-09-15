@@ -24,7 +24,7 @@ export default function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
       try {
         setLoading(true);
         setError(null);
-        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+        const pdf = await pdfjsLib.getDocument({ url: pdfUrl }).promise;
         setNumPages(pdf.numPages);
         setCurrentPage(1);
       } catch (err: any) {

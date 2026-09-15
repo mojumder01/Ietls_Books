@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import DynamicSectionAdmin from '@/components/DynamicSectionAdmin';
 
 const DEFAULT_FIELDS = [
