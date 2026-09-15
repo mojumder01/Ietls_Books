@@ -77,3 +77,21 @@ export const READING_CSV_HEADERS = [
   'difficulty',
   'level'
 ];
+
+export const SPELLING_CSV_HEADERS = [
+  'pronunciation',
+  'correctSpelling'
+];
+
+export const PRONUNCIATION_CSV_HEADERS = [
+  'word',
+  'pronunciation',
+  'meaning',
+  'level'
+];
+
+export const TONGUETWISTERS_CSV_HEADERS = [
+  'text',
+  'difficulty',
+  'level'
+];
