@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { downloadCSVTemplate, parseCSV, PRONUNCIATION_CSV_HEADERS } from '@/utils/csvUtils';
 
 export default function PronunciationManagement() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,9 @@ export default function PronunciationManagement() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [csvLoading, setCsvLoading] = useState(false);
+  const [csvMessage, setCsvMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +58,48 @@ export default function PronunciationManagement() {
       setMessage(`❌ Error: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCsvLoading(true);
+    setCsvMessage('');
+
+    try {
+      const text = await file.text();
+      const rows = parseCSV(text);
+
+      if (rows.length === 0) {
+        setCsvMessage('❌ No valid data found in CSV file');
+        return;
+      }
+
+      let successCount = 0;
+      for (const row of rows) {
+        try {
+          await addDoc(collection(db, 'pronunciation_words'), {
+            word: row.word || '',
+            pronunciation: row.pronunciation || '',
+            meaning: row.meaning || '',
+            level: row.level || 'A1',
+            createdAt: new Date(),
+          });
+          successCount++;
+        } catch (error) {
+          console.error('Error adding document:', error);
+        }
+      }
+
+      setCsvMessage(`✅ Successfully added ${successCount} pronunciation words from CSV!`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTimeout(() => setCsvMessage(''), 4000);
+    } catch (error: any) {
+      setCsvMessage(`❌ Error processing CSV: ${error.message}`);
+    } finally {
+      setCsvLoading(false);
     }
   };
 

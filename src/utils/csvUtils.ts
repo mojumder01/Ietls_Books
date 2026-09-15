@@ -95,3 +95,35 @@ export const TONGUETWISTERS_CSV_HEADERS = [
   'difficulty',
   'level'
 ];
+
+export const LISTENING_CSV_HEADERS = [
+  'title',
+  'audioUrl',
+  'transcript',
+  'questions',
+  'difficulty',
+  'level'
+];
+
+export const WRITING_CSV_HEADERS = [
+  'prompt',
+  'difficulty',
+  'level',
+  'timeLimit'
+];
+
+export const SPEAKING_CSV_HEADERS = [
+  'prompt',
+  'difficulty',
+  'level',
+  'timeLimit'
+];
+
+export const BOOKS_CSV_HEADERS = [
+  'title',
+  'author',
+  'description',
+  'difficulty',
+  'level',
+  'coverUrl'
+];

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { downloadCSVTemplate, parseCSV, READING_CSV_HEADERS } from '@/utils/csvUtils';
 
 export default function ReadingManagement() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,9 @@ export default function ReadingManagement() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [csvLoading, setCsvLoading] = useState(false);
+  const [csvMessage, setCsvMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +57,57 @@ export default function ReadingManagement() {
       setMessage(`❌ Error: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCsvLoading(true);
+    setCsvMessage('');
+
+    try {
+      const text = await file.text();
+      const rows = parseCSV(text);
+
+      if (rows.length === 0) {
+        setCsvMessage('❌ No valid data found in CSV file');
+        return;
+      }
+
+      let successCount = 0;
+      for (const row of rows) {
+        try {
+          const questions = row.questions ? row.questions.split('|').map((q, idx) => ({
+            id: String(idx + 1),
+            question: q.trim(),
+            options: [],
+            correctAnswer: '',
+            type: 'shortanswer'
+          })) : [];
+
+          await addDoc(collection(db, 'reading'), {
+            title: row.title || '',
+            passage: row.passage || '',
+            questions: questions.length > 0 ? questions : [],
+            difficulty: row.difficulty || 'medium',
+            level: row.level || 'B1',
+            createdAt: new Date(),
+          });
+          successCount++;
+        } catch (error) {
+          console.error('Error adding document:', error);
+        }
+      }
+
+      setCsvMessage(`✅ Successfully added ${successCount} reading passages from CSV!`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTimeout(() => setCsvMessage(''), 4000);
+    } catch (error: any) {
+      setCsvMessage(`❌ Error processing CSV: ${error.message}`);
+    } finally {
+      setCsvLoading(false);
     }
   };
 
@@ -184,6 +239,58 @@ export default function ReadingManagement() {
             {loading ? 'Adding...' : 'Add Reading Passage'}
           </button>
         </form>
+
+        <div className="mt-8 pt-8 border-t border-slate-300 dark:border-slate-600">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Batch Upload CSV</h2>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => downloadCSVTemplate('reading_template.csv', READING_CSV_HEADERS)}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+            >
+              Download CSV Template
+            </button>
+
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                onChange={handleCSVUpload}
+                disabled={csvLoading}
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={csvLoading}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
+              >
+                {csvLoading ? 'Uploading...' : 'Upload CSV'}
+              </button>
+            </div>
+
+            {csvMessage && (
+              <div
+                className={`p-3 rounded-lg text-sm ${
+                  csvMessage.includes('✅')
+                    ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                    : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                }`}
+              >
+                {csvMessage}
+              </div>
+            )}
+
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">CSV Format Example:</p>
+              <pre className="text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 p-2 rounded overflow-x-auto">
+{`title,passage,questions,difficulty,level
+"Reading Title","The passage text here","Question 1|Question 2",medium,B1
+"Another Title","More passage text","Q1|Q2|Q3",easy,A2`}
+              </pre>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
