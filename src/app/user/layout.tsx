@@ -1,22 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiMenu, FiX } from 'react-icons/fi';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((authUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
       if (!authUser) {
         router.push('/login');
       } else {
         setUser(authUser);
+        // Fetch user role from Firestore
+        try {
+          const userDoc = await getDoc(doc(db, 'users', authUser.uid));
+          if (userDoc.exists() && userDoc.data().role === 'admin') {
+            setIsAdmin(true);
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+        }
       }
     });
 
@@ -123,6 +134,21 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           >
             🏆 Leaderboard
           </Link>
+
+          {isAdmin && (
+            <>
+              <div className="my-4 border-t border-slate-200 dark:border-slate-700"></div>
+              <div className="px-4 py-2 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">
+                Admin
+              </div>
+              <Link
+                href="/admin"
+                className="block px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition font-semibold"
+              >
+                ⚙️ Admin Panel
+              </Link>
+            </>
+          )}
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-700">
