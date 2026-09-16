@@ -233,14 +233,16 @@ export default function DynamicSectionAdmin({
   return (
     <div className="p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex-shrink-0">
           📝 Manage {title}
         </h1>
         <button
+          type="button"
           onClick={() => setShowFieldManager(!showFieldManager)}
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition whitespace-nowrap"
+          className="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-semibold rounded-lg transition whitespace-nowrap z-10 flex items-center justify-center gap-2"
         >
-          {showFieldManager ? '✓ Close' : '⚙️ Manage'} Fields
+          <span>{showFieldManager ? '✓' : '⚙️'}</span>
+          <span>{showFieldManager ? 'Close' : 'Manage'} Fields</span>
         </button>
       </div>
 
