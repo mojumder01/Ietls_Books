@@ -141,13 +141,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
           <button
             onClick={handleLogout}
             className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
           >
             Logout
           </button>
+          <div className="text-center text-xs text-slate-600 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <p>Built by</p>
+            <p className="font-semibold text-slate-700 dark:text-slate-300">Muntasir</p>
+          </div>
         </div>
       </aside>
 
